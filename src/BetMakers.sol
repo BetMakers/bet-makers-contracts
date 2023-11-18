@@ -1,13 +1,18 @@
 // SPDX-License-Identifier: MIT
 pragma solidity =0.8.17;
 
+import {ERC20} from "@solmate/src/tokens/ERC20.sol";
+import {SafeTransferLib} from "@solmate/src/utils/SafeTransferLib.sol";
+
 contract BetMakers {
+    using SafeTransferLib for ERC20;
+    address USDT = 0xc2132D05D31c914a87C6611C10748AEb04B58e8F; 
+
     address betMakerAddress;
     address public owner;
     mapping(uint256 => mapping(uint256 => address[])) public poolParticipants; // uint pubId to uint256 result to betterAddress
     mapping(uint256 => uint256) public matchPool; // uint pubId to uint total pool // money
     mapping(uint256 => uint256) public matchBet; // uint pubId to uint bet ticket  // money
-    address currency = 0xc2132D05D31c914a87C6611C10748AEb04B58e8F; // usdt
   
     constructor(){
         owner = msg.sender;
@@ -45,7 +50,7 @@ contract BetMakers {
         
         if (bettersteam1 != bettersteam2) {   
             for (uint256 i = poolParticipants[pubId][largerTeam].length; i > finalParticipants; --i) {
-                // IERC20(currency).safeTransfer(poolParticipants[pubId][largerTeam][i], matchBet[pubId]);
+                ERC20(USDT).safeTransfer(poolParticipants[pubId][largerTeam][i], matchBet[pubId]);
                 poolParticipants[pubId][largerTeam].pop();
                 matchPool[pubId] -= matchBet[pubId];
          }
@@ -57,7 +62,7 @@ contract BetMakers {
       uint256 winners = poolParticipants[pubId][result].length;
       uint256 prize = matchPool[pubId]/winners;
       for (uint256 i; i < winners; ++i) {
-          // IERC20(currency).safeTransfer(poolParticipants[pubId][result][i], prize);
+          ERC20(USDT).safeTransfer(poolParticipants[pubId][result][i], prize);
           matchPool[pubId] -= prize;
       }
     }
