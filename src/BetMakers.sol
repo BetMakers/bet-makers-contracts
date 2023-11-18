@@ -115,7 +115,7 @@ contract BetMakers is ChainlinkClient, ConfirmedOwner {
         // Set the URL to perform the GET request on
         req.add(
             "get",
-            "https://myfotballgameresults.io/${matchId}"
+            "https://seal-app-tkp3m.ondigitalocean.app/games"
         );
 
         req.add("path", "winner"); // Chainlink nodes 1.0.0 and later support this format
