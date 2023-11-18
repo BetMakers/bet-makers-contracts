@@ -9,7 +9,13 @@ contract DeployBase is Script {
   function run() public {
     vm.startBroadcast();
 
-    
+    BetMakers betMakers = new BetMakers();
+    BetMakersOpenAction bMO = new BetMakersOpenAction(
+      0xC1E77eE73403B8a7478884915aA599932A677870, 
+      address(betMakers)
+    );
+
+    betMakers.setBetMaker(address(bMO));
 
     vm.stopBroadcast();
   }
