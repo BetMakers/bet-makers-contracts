@@ -4,7 +4,7 @@ pragma solidity =0.8.17;
 import "forge-std/Script.sol";
 import {BetMakers} from '../src/BetMakers.sol';
 import {BetMakersOpenAction} from '../src/BetMakersOpenAction.sol';
-
+import {ERC20Detailed} from '../src/VoteTokenImplementation.sol';
 contract DeployBase is Script {
   function run() public {
     vm.startBroadcast();
@@ -16,10 +16,8 @@ contract DeployBase is Script {
     );
 
     betMakers.setBetMaker(address(bMO));
-    ERC20Detailed voteToken= new ERC20Detailed();
-    voteToken.initialize("City", "CTY", 0);
-    voteToken.initialize("Lib", "LIB", 0);
-
+    tokenDeployer token = new tokenDeployer(0xC2628eDdDB676c4cAF68aAD55d2191F6c9668624,"City", "CTY");
+    tokenDeployer token2 = new tokenDeployer(0xC2628eDdDB676c4cAF68aAD55d2191F6c9668624,"Lib", "LIB");
 
     vm.stopBroadcast();
   }
