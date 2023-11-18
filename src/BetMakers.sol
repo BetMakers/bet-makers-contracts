@@ -3,8 +3,8 @@ pragma solidity =0.8.17;
 
 import {ERC20} from "@solmate/src/tokens/ERC20.sol";
 import {SafeTransferLib} from "@solmate/src/utils/SafeTransferLib.sol";
-import "@chainlink/contracts/src/v0.8/ChainlinkClient.sol";
-import "@chainlink/contracts/src/v0.8/shared/access/ConfirmedOwner.sol";
+import {ChainlinkClient, Chainlink} from "node_modules/@chainlink/contracts/src/v0.8/ChainlinkClient.sol";
+import {ConfirmedOwner} from "node_modules/@chainlink/contracts/src/v0.8/shared/access/ConfirmedOwner.sol";
 
 contract BetMakers is ChainlinkClient, ConfirmedOwner {
     using SafeTransferLib for ERC20;
@@ -12,11 +12,13 @@ contract BetMakers is ChainlinkClient, ConfirmedOwner {
     address USDT = 0xc2132D05D31c914a87C6611C10748AEb04B58e8F; 
 
     address betMakerAddress;
-    address public owner;
+    address public admin;
     mapping(uint256 => mapping(uint256 => address[])) public poolParticipants; // uint pubId to uint256 result to betterAddress
     mapping(uint256 => uint256) public matchPool; // uint pubId to uint total pool // money
     mapping(uint256 => uint256) public matchBet; // uint pubId to uint bet ticket  // money
-
+    mapping(uint256 => uint256) public matchId; // id of the match depending on the pubId
+    uint256 betIndex;
+    mapping(uint256 => uint256) public betIndexToPubId;
     // Chainlink Functions variables    
     uint256 public volume;
     bytes32 private jobId;
@@ -35,7 +37,7 @@ contract BetMakers is ChainlinkClient, ConfirmedOwner {
         setChainlinkOracle(0x40193c8518BB267228Fc409a613bDbD8eC5a97b3);
         jobId = "ca98366cc7314957b8c012c72f05aeeb";
         fee = (1 * LINK_DIVISIBILITY) / 10; // 0,1 * 10**18 (Varies by network and job)
-        owner = msg.sender;
+        admin = msg.sender;
     } 
 
     modifier onlyBetMakers() {
@@ -45,14 +47,15 @@ contract BetMakers is ChainlinkClient, ConfirmedOwner {
         );
         _;
     }
-    modifier onlyOwner() {
-        require(msg.sender == owner, "OnlyOwner");
+    modifier onlyAdmin() {
+        require(msg.sender == admin, "onlyAdmin");
         _;
     }
 
-    function setBet(uint256 pubId, uint256 bet, uint256 result, address profileAddress) public onlyBetMakers{
+    function setBet(uint256 pubId,uint256 _matchId, uint256 bet, uint256 result, address profileAddress) public onlyBetMakers{
         matchPool[pubId] += bet;
         matchBet[pubId] = bet;
+        matchId[pubId] = _matchId;
         poolParticipants[pubId][result].push(profileAddress);
     }
 
@@ -61,7 +64,7 @@ contract BetMakers is ChainlinkClient, ConfirmedOwner {
         poolParticipants[pubId][result].push(profileAddress);
     }
 
-    function startBet(uint256 pubId) external onlyOwner  {
+    function startBet(uint256 pubId) external onlyAdmin  {
         //devolver apuesta a los que no alcanzaron a hacer match
         uint256 bettersteam1 = poolParticipants[pubId][1].length;
         uint256 bettersteam2 = poolParticipants[pubId][2].length;
@@ -78,9 +81,10 @@ contract BetMakers is ChainlinkClient, ConfirmedOwner {
         } 
     }
 
-    function executeBet(uint256 pubId) external onlyOwner{
+    function executeBet(uint256 pubId) external onlyAdmin{
       // chainlink api oracle to get actual result
       requestVolumeData(matchId[pubId]);
+      betIndexToPubId[betIndex] =  pubId;
     }
 
         /**
@@ -90,18 +94,19 @@ contract BetMakers is ChainlinkClient, ConfirmedOwner {
         bytes32 _requestId,
         uint256 _volume
     ) public recordChainlinkFulfillment(_requestId) {
-        emit RequestVolume(_requestId, _volume);
-        result = _volume;
-
-        uint256 winners = poolParticipants[pubId][result].length;
-        uint256 prize = matchPool[pubId]/winners;
+        //emit RequestVolume(_requestId, _volume);
+        uint256 result = _volume;
+        
+        uint256 winners = poolParticipants[betIndexToPubId[betIndex]][result].length;
+        uint256 prize = matchPool[betIndexToPubId[betIndex]]/winners;
       for (uint256 i; i < winners; ++i) {
-          ERC20(USDT).safeTransfer(poolParticipants[pubId][result][i], prize);
-          matchPool[pubId] -= prize;
+          ERC20(USDT).safeTransfer(poolParticipants[betIndexToPubId[betIndex]][result][i], prize);
+          matchPool[betIndexToPubId[betIndex]] -= prize;
       }
+      betIndex++;
     }
 
-    function setBetMaker(address _betMakerAddress) external onlyOwner{
+    function setBetMaker(address _betMakerAddress) external onlyAdmin{
         betMakerAddress = _betMakerAddress;
     }
 

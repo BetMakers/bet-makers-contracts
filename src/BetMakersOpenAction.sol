@@ -17,8 +17,9 @@ contract BetMakersOpenAction is HubRestricted, IPublicationActionModule {
     mapping(uint256 => mapping(uint256 => address[])) public poolParticipants; // uint pubId to uint256 result to betterAddress
     mapping(uint256 => uint256) public matchPool; // uint pubId to uint total pool
     mapping(uint256 => uint256) public matchBet; // uint pubId to uint bet ticket
-    BetMakers internal _betMakers;
+    mapping(uint256 => uint256) public matchId; // id of the match depending on the pubId
 
+    BetMakers internal _betMakers;
     constructor(address lensHubProxyContract, address betMakersContract) HubRestricted(lensHubProxyContract) {
         _betMakers = BetMakers(betMakersContract);
     }
@@ -35,16 +36,17 @@ contract BetMakersOpenAction is HubRestricted, IPublicationActionModule {
         1 = first wins
         2 = second wins
         */
-        (string memory matchId, uint256 bet,uint256 result, 
+        (uint256  _matchId, uint256 bet,uint256 result, 
          address profileAddress // poly address
-        ) = abi.decode(data, (string, uint256, uint256, address));
+        ) = abi.decode(data, (uint256, uint256, uint256, address));
         // Crea un pozo depositalo
         //require(msg.sender has fantoken)
         matchPool[pubId] += bet;
         matchBet[pubId] = bet;
+        matchId[pubId] = _matchId;
         poolParticipants[pubId][result].push(profileAddress);
         ERC20(USDT).safeTransferFrom(profileAddress,address(_betMakers), bet);
-        _betMakers.setBet(pubId, bet, result, profileAddress);
+        _betMakers.setBet(pubId, matchId[pubId], bet, result, profileAddress);
         // setea el function de la hora cuando termina el partido
         //rewardingTime[pubId] = // get time of match ending from chainlink o sacarlo de afuera
         return data;
