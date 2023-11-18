@@ -30,6 +30,9 @@ fttt:
 deploy:
 	forge script script/Deploy.s.sol --rpc-url https://rpc-mumbai.maticvigil.com --sender $(PUBLIC_KEY) --broadcast --verify -i 1 -vvvv --legacy
 
+dd:
+	forge script script/Deploy.chilliz.s.sol --rpc-url https://spicy-rpc.chiliz.com --sender $(PUBLIC_KEY) --broadcast --verify -i 1 -vvvv --legacy
+
 # deploy on mainnet
 mdeploy:
 	forge script script/Deploy.Mainnet.s.sol --rpc-url $(MAINNET_RPC) --sender $(PUBLIC_KEY) --broadcast --verify -i 1 -vvvv
