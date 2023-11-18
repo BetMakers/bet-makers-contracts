@@ -6,6 +6,7 @@ import {SafeTransferLib} from "@solmate/src/utils/SafeTransferLib.sol";
 
 contract BetMakers {
     using SafeTransferLib for ERC20;
+
     address USDT = 0xc2132D05D31c914a87C6611C10748AEb04B58e8F; 
 
     address betMakerAddress;
@@ -29,6 +30,7 @@ contract BetMakers {
         require(msg.sender == owner, "OnlyOwner");
         _;
     }
+
     function setBet(uint256 pubId, uint256 bet, uint256 result, address profileAddress) public onlyBetMakers{
         matchPool[pubId] += bet;
         matchBet[pubId] = bet;

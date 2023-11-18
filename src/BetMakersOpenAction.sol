@@ -6,14 +6,18 @@ import {HubRestricted} from './lens/HubRestricted.sol';
 import {Types} from './lens/Types.sol';
 import {IPublicationActionModule} from './interfaces/IPublicationActionModule.sol';
 import {BetMakers} from './BetMakers.sol';
+import {ERC20} from "@solmate/src/tokens/ERC20.sol";
+import {SafeTransferLib} from "@solmate/src/utils/SafeTransferLib.sol";
 
 contract BetMakersOpenAction is HubRestricted, IPublicationActionModule {
+    using SafeTransferLib for ERC20;
+
+    address USDT = 0xc2132D05D31c914a87C6611C10748AEb04B58e8F; 
+
     mapping(uint256 => mapping(uint256 => address[])) public poolParticipants; // uint pubId to uint256 result to betterAddress
     mapping(uint256 => uint256) public matchPool; // uint pubId to uint total pool
     mapping(uint256 => uint256) public matchBet; // uint pubId to uint bet ticket
     BetMakers internal _betMakers;
-    address currency = 0xc2132D05D31c914a87C6611C10748AEb04B58e8F; 
-    // using SafeERC20 for IERC20;  // SafeERC20 to transfer tokens.
 
     constructor(address lensHubProxyContract, address betMakersContract) HubRestricted(lensHubProxyContract) {
         _betMakers = BetMakers(betMakersContract);
@@ -39,7 +43,7 @@ contract BetMakersOpenAction is HubRestricted, IPublicationActionModule {
         matchPool[pubId] += bet;
         matchBet[pubId] = bet;
         poolParticipants[pubId][result].push(profileAddress);
-        // IERC20(currency).safeTransferFrom(profileAddress,address(_betMakers), bet);
+        ERC20(USDT).safeTransferFrom(profileAddress,address(_betMakers), bet);
         _betMakers.setBet(pubId, bet, result, profileAddress);
         // setea el function de la hora cuando termina el partido
         //rewardingTime[pubId] = // get time of match ending from chainlink o sacarlo de afuera
@@ -55,9 +59,8 @@ contract BetMakersOpenAction is HubRestricted, IPublicationActionModule {
       matchPool[params.publicationActedId] += matchBet[params.publicationActedId];
       (uint256 result) = abi.decode(params.actionModuleData, (uint256));
       poolParticipants[params.publicationActedId][result].push(params.actorProfileOwner);
-      // IERC20(currency).safeTransferFrom(params.actorProfileOwner,address(_betMakers), matchBet[params.publicationActedId]);
+      ERC20(USDT).safeTransferFrom(params.actorProfileOwner,address(_betMakers), matchBet[params.publicationActedId]);
       _betMakers.joinBet(params.publicationActedId, result,params.actorProfileOwner);
-
     }
 }
 
